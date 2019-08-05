@@ -1,5 +1,6 @@
 .env
 *.dat
+Makefile
 
 # Created by https://www.gitignore.io/api/go
 
