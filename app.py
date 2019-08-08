@@ -12,6 +12,17 @@ import time
 import ujson
 
 
+METRICS_ENABLED = os.getenv('GLANCE_METRICS', False)
+if METRICS_ENABLED:
+    try:
+        import prometheus_client
+    except ImportError:
+        METRICS_ENABLED = False
+
+    from prometheus_client import Summary
+    from sanic.response import raw
+
+
 class ShardState(IntEnum):
     UNKNOWN = 0
     UNHEALTHY = 1
@@ -142,6 +153,29 @@ async def noscript(request):
     return text(str(State))
 
 
+if METRICS_ENABLED:
+
+    STATE_ENUM = Summary(
+        'shard_state', 'Shard State',
+        labelnames=['state', 'shard']
+    )
+
+    @app.get('/metrics')
+    async def handle_metrics(request):
+        """sanic handler for Prometheus metrics."""
+        registry = prometheus_client.REGISTRY
+
+        if 'name[]' in request.args:
+            registry = registry.restricted_registry(request.args['name[]'])
+
+        output = prometheus_client.generate_latest(registry)
+
+        return raw(
+            body=output,
+            content_type=prometheus_client.CONTENT_TYPE_LATEST
+        )
+
+
 def deliver(payload):
     for client in Feeds:
         asyncio.ensure_future(client.send(payload))
@@ -169,7 +203,8 @@ async def _run_health_checks():
             if shard['state'] == ShardState.UNHEALTHY: # this shard is already sick
                 continue # TODO: alerting for continued sickness?
             
-            if (now - shard['last_healthy']) > health_timeout:
+            last = now - shard['last_healthy']
+            if last > health_timeout:
                 shard['state'] = ShardState.UNHEALTHY
                 payload = ujson.dumps({
                     'op': 'state_update',
@@ -180,6 +215,12 @@ async def _run_health_checks():
                     }
                 })
                 deliver(payload)
+
+            if METRICS_ENABLED:
+                STATE_ENUM.labels(
+                    state=shard['state'].name.lower(),
+                    shard=id
+                ).observe(last)
 
 
 def configure_state():
