@@ -174,6 +174,10 @@ function hello(data) {
       shardStart = Math.min(shardStart, shardCount);
       const shardEnd = Math.min(shardStart + shardsPerCluster, shardCount);
 
+      if (shardCount <= shardStart) {
+        break;
+      }
+
       const shardCluster = document.createElement('div');
       shardCluster.classList.add('shard-cluster');
 
