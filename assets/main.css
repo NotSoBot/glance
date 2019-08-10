@@ -116,6 +116,28 @@ body {
 }
 .cluster-container {
     display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+
+    margin: 0px 5px;
+    padding: 5px 0;
+    border: 0.1px solid var(--cluster-container-border);
+}
+
+.shard-cluster {
+    display: flex;
+    flex-flow: column wrap;
+
+    margin: 0px 5px;
+    border: 0.1px solid var(--cluster-container-border);
+}
+.shard-cluster .shard-cluster-title {
+    margin: auto;
+    font-size: 12px;
+}
+
+.shards {
+    display: flex;
     flex-wrap: wrap;
 
     margin: 0px 5px;

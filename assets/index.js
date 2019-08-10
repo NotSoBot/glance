@@ -166,24 +166,50 @@ function hello(data) {
     clusterEl.appendChild(clusterTitle);
     clusterEl.appendChild(clusterContainer);
 
-    for (let i = 0; i < data[cluster]['len']; i++) {
-      const shard = document.createElement('div');
-      shard.classList.add('shard');
-      shard.setAttribute('data-status', '0');
+    const shardsPerCluster = (window.config && 'clusters' in window.config) ? window.config.clusters : 1;
+    const shardCount = data[cluster]['len'];
 
-      if (i.toString() in data[cluster]) {
-        //console.log(data[cluster][i.toString()]);
-        shard.setAttribute('data-status', data[cluster][i.toString()]['state']);
+    let clusterId = 0;
+    for (let shardStart = 0; shardStart <= shardCount; shardStart += shardsPerCluster) {
+      shardStart = Math.min(shardStart, shardCount);
+      const shardEnd = Math.min(shardStart + shardsPerCluster, shardCount);
+
+      const shardCluster = document.createElement('div');
+      shardCluster.classList.add('shard-cluster');
+
+      const shardClusterTitle = document.createElement('p');
+      shardClusterTitle.classList.add('shard-cluster-title');
+      shardClusterTitle.textContent = `c${clusterId}`;
+      shardCluster.appendChild(shardClusterTitle);
+
+      const shardClusterGroup = document.createElement('div');
+      shardClusterGroup.classList.add('shards');
+      shardCluster.appendChild(shardClusterGroup);
+
+      clusterContainer.appendChild(shardCluster);
+
+      for (let shardId = shardStart; shardId < shardEnd; shardId++) {
+        const shard = document.createElement('div');
+        shard.classList.add('shard');
+        shard.setAttribute('data-status', '0');
+
+        const id = String(shardId);
+        if (id in data[cluster]) {
+          //console.log(data[cluster][id]);
+          shard.setAttribute('data-status', data[cluster][id]['state']);
+        }
+
+        const shardText = document.createElement('p');
+        shardText.classList.add('shard-id');
+        shardText.textContent = id;
+
+        shard.appendChild(shardText);
+
+        shardClusterGroup.appendChild(shard);
+        state[cluster][id] = shard;
       }
 
-      const shardId = document.createElement('p');
-      shardId.classList.add('shard-id');
-      shardId.textContent = i.toString();
-
-      shard.appendChild(shardId);
-
-      clusterContainer.appendChild(shard);
-      state[cluster][i.toString()] = shard;
+      clusterId++;
     }
 
     appClusterMount.appendChild(clusterEl);

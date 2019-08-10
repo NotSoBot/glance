@@ -4,6 +4,7 @@
 let conf = {
   //'url': '' // custom url override
   //'branding': '' // custom branding
+  //'clusters': 5 // shards per cluster
 };
 
 //window.config = conf;
